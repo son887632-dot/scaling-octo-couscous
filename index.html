@@ -1,0 +1,972 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kiwia — Kiếm tiền online</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --bg:#0b1210; --panel:#111c18; --panel2:#16241f; --line:#24382f;
+    --green:#6ee7a8; --green2:#22c55e; --text:#e6f2ec; --muted:#8aa79a;
+    --danger:#ff5d5d; --gold:#ffd166;
+  }
+  body{
+    font-family:'Segoe UI',system-ui,-apple-system,sans-serif;
+    background:radial-gradient(1200px 600px at 50% -10%,#14302a 0%,#0b1210 60%) fixed;
+    color:var(--text); min-height:100vh; padding-bottom:40px;
+  }
+  .hidden{display:none !important}
+  .mono{font-family:ui-monospace,Consolas,monospace}
+  .muted{color:var(--muted)}
+  .container{max-width:1000px;margin:0 auto;padding:0 16px}
+
+  /* ---------- Buttons ---------- */
+  .btn{
+    border:1px solid var(--line); background:var(--panel2); color:var(--text);
+    padding:10px 16px; border-radius:10px; cursor:pointer; font-size:14px;
+    font-weight:600; transition:.15s; font-family:inherit;
+  }
+  .btn:hover{filter:brightness(1.25); transform:translateY(-1px)}
+  .btn:active{transform:translateY(0)}
+  .btn.primary{
+    background:linear-gradient(135deg,#22c55e,#0ea5a4); border:none; color:#04120c;
+  }
+  .btn.danger{background:linear-gradient(135deg,#ef4444,#b91c1c); border:none; color:#fff}
+  .btn.ghost{background:transparent}
+  .btn.small{padding:7px 12px;font-size:13px}
+  .btn.tiny{padding:4px 9px;font-size:12px}
+  .btn.big{width:100%;padding:14px;font-size:16px;margin-top:16px}
+  .btn:disabled{opacity:.5;cursor:not-allowed}
+
+  /* ---------- Inputs ---------- */
+  input{
+    width:100%; padding:12px 14px; border-radius:10px; border:1px solid var(--line);
+    background:#0c1613; color:var(--text); font-size:14px; font-family:inherit;
+    outline:none; transition:.15s;
+  }
+  input:focus{border-color:var(--green); box-shadow:0 0 0 3px rgba(110,231,168,.12)}
+  label{display:block;font-size:13px;color:var(--muted);margin:14px 0 6px;font-weight:600}
+
+  /* ---------- Auth ---------- */
+  #authView{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px}
+  .auth-card{
+    width:100%;max-width:420px;background:linear-gradient(180deg,#12211c,#0e1915);
+    border:1px solid var(--line); border-radius:20px; padding:32px 26px;
+    box-shadow:0 30px 80px rgba(0,0,0,.6);
+  }
+  .logo{font-size:32px;font-weight:800;text-align:center;letter-spacing:-1px}
+  .logo span{background:linear-gradient(135deg,#6ee7a8,#22c55e);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .sub{text-align:center;color:var(--muted);font-size:13px;margin-top:6px;margin-bottom:22px}
+  .tabs{display:flex;background:#0c1613;border-radius:12px;padding:4px;gap:4px;margin-bottom:6px}
+  .tab{
+    flex:1;padding:10px;border:none;background:transparent;color:var(--muted);
+    border-radius:9px;cursor:pointer;font-weight:700;font-size:14px;font-family:inherit;transition:.15s;
+  }
+  .tab.active{background:linear-gradient(135deg,#22c55e,#0ea5a4);color:#04120c}
+  .msg{font-size:13px;margin-top:12px;text-align:center;min-height:18px;font-weight:600}
+  .msg.ok{color:var(--green)}
+  .msg.err{color:var(--danger)}
+
+  /* ---------- Topbar ---------- */
+  .topbar{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:14px 18px;border-bottom:1px solid var(--line);
+    background:rgba(10,20,16,.85);backdrop-filter:blur(10px);
+    position:sticky;top:0;z-index:50;
+  }
+  .brand{font-weight:800;font-size:20px}
+  .top-right{display:flex;align-items:center;gap:10px}
+  .chip{
+    background:var(--panel2);border:1px solid var(--line);padding:6px 12px;
+    border-radius:999px;font-size:13px;color:var(--muted);max-width:200px;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  }
+
+  /* ---------- Cards / layout ---------- */
+  main{padding-top:22px}
+  .card{
+    background:linear-gradient(180deg,#111d18,#0e1815);
+    border:1px solid var(--line);border-radius:16px;padding:20px;margin-bottom:16px;
+  }
+  .card h3{font-size:17px;margin-bottom:14px}
+  .hello h2{font-size:22px;margin-bottom:8px}
+  .uid-row{display:flex;align-items:center;gap:8px;margin-top:14px;flex-wrap:wrap}
+  .uid-row code{
+    background:#0c1613;border:1px dashed var(--line);padding:6px 10px;
+    border-radius:8px;font-size:13px;color:var(--green);word-break:break-all;
+  }
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px}
+  @media(max-width:640px){.grid3{grid-template-columns:1fr}}
+  .stat{
+    background:linear-gradient(180deg,#111d18,#0e1815);border:1px solid var(--line);
+    border-radius:14px;padding:16px;text-align:center;
+  }
+  .stat-label{font-size:12px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.6px}
+  .stat-value{font-size:20px;font-weight:800;margin-top:8px;color:var(--green);word-break:break-all}
+  .stat-value.gold{color:var(--gold)}
+
+  /* ---------- Tasks ---------- */
+  .task-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  @media(max-width:640px){.task-grid{grid-template-columns:1fr}}
+  .task{
+    background:var(--panel2);border:1px solid var(--line);border-radius:14px;
+    padding:18px;display:flex;flex-direction:column;gap:10px;
+  }
+  .task .name{font-weight:800;font-size:16px;display:flex;align-items:center;gap:8px}
+  .badge{font-size:11px;background:rgba(110,231,168,.15);color:var(--green);
+    padding:3px 8px;border-radius:999px;font-weight:700}
+  .badge.layma{background:rgba(255,209,102,.15);color:var(--gold)}
+  .task p{font-size:13px;color:var(--muted);line-height:1.5}
+
+  .code-input-row{display:flex;gap:10px}
+  @media(max-width:640px){.code-input-row{flex-direction:column}}
+  .code-input-row input{flex:1;font-family:ui-monospace,monospace}
+
+  .rate-note{font-size:13px;color:var(--muted);margin-bottom:12px}
+  .exchange-row{display:flex;gap:10px}
+  @media(max-width:640px){.exchange-row{flex-direction:column}}
+
+  /* ---------- Modal ---------- */
+  .modal-backdrop{
+    position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(4px);
+    display:flex;align-items:center;justify-content:center;z-index:200;padding:20px;
+  }
+  .modal{
+    width:100%;max-width:440px;background:linear-gradient(180deg,#13221c,#0e1915);
+    border:1px solid var(--line);border-radius:18px;padding:26px;text-align:center;
+  }
+  .modal h3{font-size:18px;margin-bottom:12px}
+  .progress{height:10px;background:#0c1613;border-radius:999px;overflow:hidden;margin:18px 0 10px}
+  .progress > div{height:100%;width:0%;background:linear-gradient(90deg,#22c55e,#6ee7a8);transition:width .1s linear}
+  .code-box{
+    background:#0c1613;border:1px dashed var(--green);border-radius:12px;
+    padding:16px;font-family:ui-monospace,monospace;font-size:16px;
+    color:var(--green);word-break:break-all;margin:12px 0;letter-spacing:1px;
+  }
+
+  /* ---------- Admin ---------- */
+  .admin-table{width:100%;border-collapse:collapse;font-size:13px}
+  .admin-table th,.admin-table td{
+    padding:10px 8px;text-align:left;border-bottom:1px solid var(--line);vertical-align:middle;
+  }
+  .admin-table th{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.6px}
+  .table-wrap{overflow-x:auto}
+  .status-ok{color:var(--green);font-weight:700}
+  .status-ban{color:var(--danger);font-weight:700}
+  .uid-cell{font-family:ui-monospace,monospace;color:var(--green);font-size:12px;word-break:break-all}
+
+  /* ---------- Ban screen ---------- */
+  #banView{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px}
+  .ban-card{
+    max-width:440px;width:100%;text-align:center;background:linear-gradient(180deg,#2a1414,#170d0d);
+    border:1px solid #4a1f1f;border-radius:20px;padding:36px 26px;
+  }
+  .ban-icon{font-size:56px;margin-bottom:14px}
+  .ban-card h2{color:var(--danger);font-size:22px;margin-bottom:10px}
+  .ban-card p{color:#d9b5b5;font-size:14px;line-height:1.6}
+  .countdown{
+    font-family:ui-monospace,monospace;font-size:34px;font-weight:800;color:var(--gold);
+    margin:20px 0;letter-spacing:2px;
+  }
+
+  /* ---------- Toast ---------- */
+  #toast{
+    position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(120px);
+    background:var(--panel2);border:1px solid var(--line);padding:14px 22px;
+    border-radius:12px;font-weight:700;font-size:14px;z-index:500;
+    transition:transform .3s;box-shadow:0 20px 50px rgba(0,0,0,.6);max-width:90vw;text-align:center;
+  }
+  #toast.show{transform:translateX(-50%) translateY(0)}
+  #toast.ok{border-color:var(--green);color:var(--green)}
+  #toast.err{border-color:var(--danger);color:var(--danger)}
+</style>
+</head>
+<body>
+
+<!-- ================= AUTH ================= -->
+<div id="authView">
+  <div class="auth-card">
+    <div class="logo">🥝 <span>Kiwia</span></div>
+    <p class="sub">Vượt link — Nhận code — Đổi tiền</p>
+
+    <div class="tabs">
+      <button class="tab active" data-tab="login">Đăng nhập</button>
+      <button class="tab" data-tab="register">Đăng ký</button>
+    </div>
+
+    <!-- Login -->
+    <form id="loginForm" class="form">
+      <label>Gmail</label>
+      <input type="email" id="loginEmail" placeholder="vidu@gmail.com" autocomplete="username" required>
+      <label>Mật khẩu</label>
+      <input type="password" id="loginPass" placeholder="••••••••" autocomplete="current-password" required>
+      <button class="btn primary big" type="submit">Đăng nhập</button>
+      <div class="msg" id="loginMsg"></div>
+    </form>
+
+    <!-- Register -->
+    <form id="registerForm" class="form hidden">
+      <label>Gmail</label>
+      <input type="email" id="regEmail" placeholder="vidu@gmail.com" autocomplete="username" required>
+      <label>Mật khẩu</label>
+      <input type="password" id="regPass" placeholder="Ít nhất 6 ký tự" autocomplete="new-password" required>
+      <label>Nhập lại mật khẩu</label>
+      <input type="password" id="regPass2" placeholder="Nhập lại mật khẩu" autocomplete="new-password" required>
+      <button class="btn primary big" type="submit">Tạo tài khoản</button>
+      <div class="msg" id="regMsg"></div>
+    </form>
+  </div>
+</div>
+
+<!-- ================= BAN SCREEN ================= -->
+<div id="banView" class="hidden">
+  <div class="ban-card">
+    <div class="ban-icon">🚫</div>
+    <h2>Tài khoản đã bị ban</h2>
+    <p>Tài khoản của bạn đã bị quản trị viên tạm khóa <b>24 giờ</b> do vi phạm điều khoản.</p>
+    <div class="countdown" id="banCountdown">00:00:00</div>
+    <p class="mono" style="font-size:12px;color:#8aa79a" id="banUidText"></p>
+    <button class="btn ghost" style="margin-top:20px" id="banLogout">Đăng xuất</button>
+  </div>
+</div>
+
+<!-- ================= USER ================= -->
+<div id="userView" class="hidden">
+  <header class="topbar">
+    <div class="brand">🥝 Kiwia</div>
+    <div class="top-right">
+      <span class="chip" id="chipEmail"></span>
+      <button class="btn ghost small" id="logoutBtn">Đăng xuất</button>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- MENU -->
+    <section id="menuSection">
+      <div class="card hello">
+        <h2>Xin chào, <span class="js-email"></span> 👋</h2>
+        <p class="muted">Chúc bạn kiếm được thật nhiều tiền hôm nay!</p>
+        <div class="uid-row">
+          <span class="muted" style="font-size:13px;font-weight:700">UID:</span>
+          <code class="js-uid mono"></code>
+          <button class="btn ghost tiny js-copy-uid" type="button">📋 Sao chép</button>
+        </div>
+        <button class="btn primary big" id="goHomeBtn">🏠 Vào trang chủ</button>
+      </div>
+
+      <div class="grid3">
+        <div class="stat">
+          <div class="stat-label">Điểm</div>
+          <div class="stat-value js-points">0</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Số dư</div>
+          <div class="stat-value gold js-balance">0₫</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Tỉ lệ quy đổi</div>
+          <div class="stat-value" style="font-size:15px">1 điểm = 100₫</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- HOME -->
+    <section id="homeSection" class="hidden">
+      <button class="btn ghost small" id="backBtn" style="margin-bottom:16px">← Quay lại menu</button>
+
+      <div class="grid3">
+        <div class="stat">
+          <div class="stat-label">Điểm</div>
+          <div class="stat-value js-points">0</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Số dư</div>
+          <div class="stat-value gold js-balance">0₫</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">UID</div>
+          <div class="stat-value js-uid mono" style="font-size:12px;color:#8aa79a"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>🔥 Làm nhiệm vụ — Vượt link</h3>
+        <div class="task-grid">
+          <div class="task">
+            <div class="name">🔗 Link4m <span class="badge">+10 điểm</span></div>
+            <p>Bấm nút bên dưới, vượt link và chờ hệ thống xác minh để nhận mã code.</p>
+            <button class="btn primary" data-task="link4m">Vượt link Link4m</button>
+          </div>
+          <div class="task">
+            <div class="name">🔗 Layma <span class="badge layma">+6 điểm</span></div>
+            <p>Bấm nút bên dưới, vượt link và chờ hệ thống xác minh để nhận mã code.</p>
+            <button class="btn primary" data-task="layma">Vượt link Layma</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>🎟️ Nhập code nhận thưởng</h3>
+        <p class="muted" style="font-size:13px;margin-bottom:12px">
+          Mỗi mã code chỉ sử dụng được <b>1 lần duy nhất</b> và chỉ dành cho tài khoản tạo ra nó.
+        </p>
+        <div class="code-input-row">
+          <input type="text" id="codeInput" placeholder="Dán mã code của bạn vào đây..." class="mono">
+          <button class="btn primary" id="submitCode">Xác nhận</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>💱 Quy đổi điểm ra tiền</h3>
+        <p class="rate-note">Tỉ lệ hiện tại: <b style="color:#6ee7a8">1 điểm = 100₫</b></p>
+        <div class="exchange-row">
+          <input type="number" id="exchangeInput" placeholder="Nhập số điểm muốn quy đổi" min="1">
+          <button class="btn primary" id="exchangeBtn">Quy đổi</button>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- ================= ADMIN ================= -->
+<div id="adminView" class="hidden">
+  <header class="topbar">
+    <div class="brand">🥝 Kiwia <span style="font-size:12px;color:#6ee7a8;border:1px solid #24382f;padding:3px 8px;border-radius:999px;margin-left:8px">ADMIN</span></div>
+    <button class="btn ghost small" id="adminLogout">Đăng xuất</button>
+  </header>
+
+  <main class="container">
+    <div class="grid3">
+      <div class="stat">
+        <div class="stat-label">Tổng người dùng</div>
+        <div class="stat-value" id="adminTotalUsers">0</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Đang bị ban</div>
+        <div class="stat-value" id="adminBannedCount" style="color:#ff5d5d">0</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Tổng số dư hệ thống</div>
+        <div class="stat-value gold" id="adminTotalMoney">0₫</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>🚫 Ban người dùng (24 giờ)</h3>
+      <p class="muted" style="font-size:13px;margin-bottom:12px">Nhập chính xác UID của người dùng cần ban.</p>
+      <div class="code-input-row">
+        <input type="text" id="banUidInput" placeholder="VD: KW-a8@F-9x#Z" class="mono">
+        <button class="btn danger" id="banBtn">Ban 24 giờ</button>
+      </div>
+      <div class="msg" id="banMsg"></div>
+    </div>
+
+    <div class="card">
+      <h3>👥 Danh sách người dùng</h3>
+      <div class="table-wrap">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>UID</th><th>Gmail</th><th>Điểm</th><th>Số dư</th><th>Trạng thái</th><th>Hành động</th>
+            </tr>
+          </thead>
+          <tbody id="adminUserList"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>⚙️ Cấu hình link vượt</h3>
+      <p class="muted" style="font-size:13px;margin-bottom:6px">Dán link vượt vào đây khi bạn có link. Để trống thì hệ thống chỉ chạy đếm ngược.</p>
+      <label>Link Link4m</label>
+      <input type="text" id="cfgLink4m" placeholder="https://link4m.com/xxxxx">
+      <label>Link Layma</label>
+      <input type="text" id="cfgLayma" placeholder="https://layma.net/xxxxx">
+      <label>Thời gian chờ (giây)</label>
+      <input type="number" id="cfgWait" min="3" value="15">
+      <button class="btn primary big" id="saveCfgBtn">Lưu cấu hình</button>
+      <div class="msg" id="cfgMsg"></div>
+    </div>
+  </main>
+</div>
+
+<!-- ================= TASK MODAL ================= -->
+<div id="taskModal" class="modal-backdrop hidden">
+  <div class="modal">
+    <div id="taskWaitState">
+      <h3 id="taskTitle">Đang vượt link...</h3>
+      <p class="muted" style="font-size:13px">Vui lòng không đóng cửa sổ này.</p>
+      <div class="progress"><div id="progressBar"></div></div>
+      <p id="waitText" class="muted" style="font-size:13px">Vui lòng chờ...</p>
+    </div>
+    <div id="taskCodeState" class="hidden">
+      <h3>✅ Vượt link thành công!</h3>
+      <p class="muted" style="font-size:13px">Mã code của bạn:</p>
+      <div class="code-box" id="codeBox"></div>
+      <p class="muted" style="font-size:12px" id="codeHint"></p>
+      <div style="display:flex;gap:10px;margin-top:16px">
+        <button class="btn ghost" id="copyCodeBtn" style="flex:1">📋 Sao chép</button>
+        <button class="btn primary" id="useCodeBtn" style="flex:1">Dùng mã này</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+/* =========================================================
+   KIWIA — ỨNG DỤNG DEMO (lưu dữ liệu bằng localStorage)
+   ========================================================= */
+
+const LS = {
+  users:   'kiwia_users',
+  codes:   'kiwia_codes',
+  session: 'kiwia_session',
+  config:  'kiwia_config'
+};
+
+/* ---- Tài khoản admin đặc quyền ---- */
+const ADMIN_EMAIL = 'son887632@gmail.com';
+const ADMIN_PASS  = 'hoangson1985';
+
+/* ---- Tỉ lệ quy đổi ---- */
+const RATE = 100; // 1 điểm = 100 VNĐ
+
+/* ---- Cấu hình nhiệm vụ ---- */
+const TASKS = {
+  link4m: { name: 'Link4m', base: 10, url: () => config.link4m },
+  layma:  { name: 'Layma',  base: 6,  url: () => config.layma  }
+};
+
+/* ---- Load dữ liệu ---- */
+function load(key, def){
+  try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : def; }
+  catch(e){ return def; }
+}
+function save(key, val){ localStorage.setItem(key, JSON.stringify(val)); }
+
+let users   = load(LS.users, []);
+let codes   = load(LS.codes, []);
+let config  = load(LS.config, { link4m:'', layma:'', wait:15 });
+let session = load(LS.session, null); // {type:'admin'} | {type:'user', uid}
+
+let currentMode = null;   // 'user' | 'admin' | null
+let currentUid  = null;
+let banState    = false;
+let taskTimer   = null;
+let lastCode    = '';
+
+/* =========================================================
+   TIỆN ÍCH
+   ========================================================= */
+const $ = id => document.getElementById(id);
+const uidChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789@#$%&*!?";
+const codeChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789.@#$/₫-_+*";
+
+function rand(n){ return Math.floor(Math.random() * n); }
+function randomStr(chars, len){ let s=''; for(let i=0;i<len;i++) s += chars[rand(chars.length)]; return s; }
+
+function genUID(){
+  return 'KW-' + randomStr(uidChars,4) + '-' + randomStr(uidChars,4) + randomStr('0123456789',2);
+}
+function genCode(){
+  return randomStr(codeChars, 22);
+}
+function isBanned(u){ return !!(u && u.bannedUntil && u.bannedUntil > Date.now()); }
+function getUser(uid){ return users.find(u => u.uid === uid) || null; }
+function getUserByEmail(email){ return users.find(u => u.email.toLowerCase() === email.toLowerCase()) || null; }
+function esc(s){
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function fmtMoney(n){ return Number(n).toLocaleString('vi-VN') + '₫'; }
+function fmtCountdown(ms){
+  if(ms < 0) ms = 0;
+  const t = Math.floor(ms/1000);
+  const h = String(Math.floor(t/3600)).padStart(2,'0');
+  const m = String(Math.floor((t%3600)/60)).padStart(2,'0');
+  const s = String(t%60).padStart(2,'0');
+  return `${h}:${m}:${s}`;
+}
+
+/* Toast */
+let toastTimer = null;
+function toast(msg, type='ok'){
+  const el = $('toast');
+  el.textContent = msg;
+  el.className = 'show ' + type;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { el.className = ''; }, 2800);
+}
+
+/* =========================================================
+   ĐIỀU HƯỚNG VIEW
+   ========================================================= */
+function showView(id){
+  ['authView','userView','adminView','banView'].forEach(v => {
+    $(v).classList.toggle('hidden', v !== id);
+  });
+  window.scrollTo(0,0);
+}
+
+/* =========================================================
+   AUTH
+   ========================================================= */
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    const isLogin = tab.dataset.tab === 'login';
+    $('loginForm').classList.toggle('hidden', !isLogin);
+    $('registerForm').classList.toggle('hidden', isLogin);
+    $('loginMsg').textContent = '';
+    $('regMsg').textContent = '';
+  });
+});
+
+/* ---- Đăng ký ---- */
+$('registerForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const email = $('regEmail').value.trim();
+  const pass  = $('regPass').value;
+  const pass2 = $('regPass2').value;
+  const msg   = $('regMsg');
+
+  const setMsg = (t, cls) => { msg.textContent = t; msg.className = 'msg ' + cls; };
+
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return setMsg('Gmail không hợp lệ!', 'err');
+  if(email.toLowerCase() === ADMIN_EMAIL)        return setMsg('Gmail này không thể đăng ký!', 'err');
+  if(pass.length < 6)                            return setMsg('Mật khẩu phải có ít nhất 6 ký tự!', 'err');
+  if(pass !== pass2)                             return setMsg('Mật khẩu nhập lại không khớp!', 'err');
+  if(getUserByEmail(email))                      return setMsg('Gmail này đã được đăng ký!', 'err');
+
+  // Tạo UID không trùng
+  let uid;
+  do { uid = genUID(); } while(getUser(uid));
+
+  const user = {
+    uid,
+    email,
+    password: pass,          // demo: lưu thô (thực tế phải hash)
+    points: 0,
+    balance: 0,
+    usedCodes: [],
+    bannedUntil: 0,
+    createdAt: Date.now()
+  };
+  users.push(user);
+  save(LS.users, users);
+
+  setMsg('Đăng ký thành công! Hãy đăng nhập.', 'ok');
+  $('registerForm').reset();
+
+  // Chuyển sang tab đăng nhập và điền sẵn email
+  setTimeout(() => {
+    document.querySelector('.tab[data-tab="login"]').click();
+    $('loginEmail').value = email;
+    $('loginPass').focus();
+    $('loginMsg').textContent = 'Đăng ký thành công! Hãy đăng nhập.';
+    $('loginMsg').className = 'msg ok';
+  }, 700);
+});
+
+/* ---- Đăng nhập ---- */
+$('loginForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const email = $('loginEmail').value.trim();
+  const pass  = $('loginPass').value;
+  const msg   = $('loginMsg');
+  const setMsg = (t, cls) => { msg.textContent = t; msg.className = 'msg ' + cls; };
+
+  // Admin đặc quyền
+  if(email.toLowerCase() === ADMIN_EMAIL && pass === ADMIN_PASS){
+    currentMode = 'admin';
+    currentUid  = null;
+    session = { type: 'admin' };
+    save(LS.session, session);
+    $('loginForm').reset();
+    setMsg('', '');
+    refresh();
+    return;
+  }
+
+  const user = getUserByEmail(email);
+  if(!user || user.password !== pass){
+    return setMsg('Gmail hoặc mật khẩu không đúng!', 'err');
+  }
+
+  currentMode = 'user';
+  currentUid  = user.uid;
+  banState    = isBanned(user);
+  session = { type: 'user', uid: user.uid };
+  save(LS.session, session);
+  $('loginForm').reset();
+  setMsg('', '');
+  refresh();
+});
+
+/* ---- Đăng xuất ---- */
+function logout(){
+  currentMode = null;
+  currentUid  = null;
+  banState    = false;
+  session     = null;
+  localStorage.removeItem(LS.session);
+  showView('authView');
+}
+$('logoutBtn').addEventListener('click', logout);
+$('adminLogout').addEventListener('click', logout);
+$('banLogout').addEventListener('click', logout);
+
+/* =========================================================
+   RENDER
+   ========================================================= */
+function refresh(){
+  if(currentMode === 'admin'){
+    showView('adminView');
+    renderAdmin();
+    return;
+  }
+  if(currentMode === 'user'){
+    const u = getUser(currentUid);
+    if(!u){ logout(); return; }
+    if(isBanned(u)){
+      banState = true;
+      showView('banView');
+      renderBan(u);
+      return;
+    }
+    banState = false;
+    showView('userView');
+    renderUser(u);
+    return;
+  }
+  showView('authView');
+}
+
+function renderUser(u){
+  document.querySelectorAll('.js-email').forEach(el => el.textContent = u.email);
+  document.querySelectorAll('.js-uid').forEach(el => el.textContent = u.uid);
+  document.querySelectorAll('.js-points').forEach(el => el.textContent = u.points);
+  document.querySelectorAll('.js-balance').forEach(el => el.textContent = fmtMoney(u.balance));
+  $('chipEmail').textContent = u.email;
+}
+
+function renderBan(u){
+  $('banUidText').textContent = 'UID: ' + u.uid;
+  $('banCountdown').textContent = fmtCountdown(u.bannedUntil - Date.now());
+}
+
+/* =========================================================
+   MENU / TRANG CHỦ
+   ========================================================= */
+$('goHomeBtn').addEventListener('click', () => {
+  $('menuSection').classList.add('hidden');
+  $('homeSection').classList.remove('hidden');
+  const u = getUser(currentUid);
+  if(u) renderUser(u);
+});
+$('backBtn').addEventListener('click', () => {
+  $('homeSection').classList.add('hidden');
+  $('menuSection').classList.remove('hidden');
+});
+
+/* Copy UID */
+document.addEventListener('click', e => {
+  if(e.target.closest('.js-copy-uid')){
+    const u = getUser(currentUid);
+    if(!u) return;
+    navigator.clipboard.writeText(u.uid).then(() => toast('Đã sao chép UID!'));
+  }
+});
+
+/* =========================================================
+   NHIỆM VỤ — VƯỢT LINK
+   ========================================================= */
+document.querySelectorAll('[data-task]').forEach(btn => {
+  btn.addEventListener('click', () => startTask(btn.dataset.task));
+});
+
+function openModal(){ $('taskModal').classList.remove('hidden'); }
+function closeModal(){ $('taskModal').classList.add('hidden'); clearInterval(taskTimer); }
+
+function startTask(type){
+  const u = getUser(currentUid);
+  if(!u) return;
+
+  const cfg = TASKS[type];
+  const url = cfg.url();
+
+  // Nếu đã có link cấu hình → mở tab mới
+  if(url) window.open(url, '_blank');
+
+  $('taskTitle').textContent = 'Đang vượt link ' + cfg.name + '...';
+  $('taskWaitState').classList.remove('hidden');
+  $('taskCodeState').classList.add('hidden');
+  $('progressBar').style.width = '0%';
+  openModal();
+
+  const totalMs = Math.max(3, Number(config.wait) || 15) * 1000;
+  const start = Date.now();
+
+  clearInterval(taskTimer);
+  taskTimer = setInterval(() => {
+    const elapsed = Date.now() - start;
+    const p = Math.min(1, elapsed / totalMs);
+    $('progressBar').style.width = (p * 100) + '%';
+    const left = Math.ceil((totalMs - elapsed) / 1000);
+    $('waitText').textContent = 'Vui lòng chờ ' + Math.max(0, left) + ' giây...';
+    if(p >= 1){
+      clearInterval(taskTimer);
+      finishTask(type);
+    }
+  }, 100);
+}
+
+function finishTask(type){
+  const u = getUser(currentUid);
+  if(!u) return;
+
+  const cfg = TASKS[type];
+  const points = cfg.base + rand(4);          // base .. base+3
+  const code = genCode();
+
+  codes.push({
+    code,
+    uid: u.uid,
+    points,
+    task: cfg.name,
+    used: false,
+    createdAt: Date.now()
+  });
+  save(LS.codes, codes);
+
+  lastCode = code;
+
+  $('taskWaitState').classList.add('hidden');
+  $('taskCodeState').classList.remove('hidden');
+  $('codeBox').textContent = code;
+  $('codeHint').textContent = `Mã trị giá ${points} điểm — chỉ dùng được 1 lần.`;
+}
+
+$('copyCodeBtn').addEventListener('click', () => {
+  navigator.clipboard.writeText(lastCode).then(() => toast('Đã sao chép mã!'));
+});
+$('useCodeBtn').addEventListener('click', () => {
+  $('codeInput').value = lastCode;
+  closeModal();
+  $('codeInput').scrollIntoView({ behavior:'smooth', block:'center' });
+  $('codeInput').focus();
+});
+
+/* =========================================================
+   NHẬP CODE
+   ========================================================= */
+$('submitCode').addEventListener('click', submitCode);
+$('codeInput').addEventListener('keydown', e => { if(e.key === 'Enter') submitCode(); });
+
+function submitCode(){
+  const u = getUser(currentUid);
+  if(!u) return;
+
+  const raw = $('codeInput').value.trim();
+  if(!raw) return toast('Vui lòng nhập mã code!', 'err');
+
+  const found = codes.find(c => c.code === raw && c.uid === u.uid && !c.used);
+  if(!found) return toast('Mã không hợp lệ hoặc đã được sử dụng!', 'err');
+
+  found.used = true;
+  found.usedAt = Date.now();
+  u.points += found.points;
+  u.usedCodes.push(found.code);
+
+  save(LS.codes, codes);
+  save(LS.users, users);
+
+  $('codeInput').value = '';
+  renderUser(u);
+  toast(`✅ Nhập mã thành công! +${found.points} điểm`);
+}
+
+/* =========================================================
+   QUY ĐỔI ĐIỂM
+   ========================================================= */
+$('exchangeBtn').addEventListener('click', () => {
+  const u = getUser(currentUid);
+  if(!u) return;
+
+  const val = parseInt($('exchangeInput').value, 10);
+  if(!val || val <= 0) return toast('Nhập số điểm hợp lệ!', 'err');
+  if(val > u.points)   return toast('Bạn không đủ điểm để quy đổi!', 'err');
+
+  const money = val * RATE;
+  u.points -= val;
+  u.balance += money;
+
+  save(LS.users, users);
+  $('exchangeInput').value = '';
+  renderUser(u);
+  toast(`💱 Đã quy đổi ${val} điểm → ${fmtMoney(money)}`);
+});
+
+/* =========================================================
+   ADMIN
+   ========================================================= */
+function renderAdmin(){
+  users = load(LS.users, []);
+
+  const bannedCount = users.filter(isBanned).length;
+  const totalMoney  = users.reduce((s,u) => s + u.balance, 0);
+
+  $('adminTotalUsers').textContent = users.length;
+  $('adminBannedCount').textContent = bannedCount;
+  $('adminTotalMoney').textContent = fmtMoney(totalMoney);
+
+  const tbody = $('adminUserList');
+  if(users.length === 0){
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#8aa79a;padding:24px">Chưa có người dùng nào.</td></tr>';
+  } else {
+    tbody.innerHTML = users.map(u => {
+      const banned = isBanned(u);
+      const status = banned
+        ? `<span class="status-ban">Bị ban (còn ${fmtCountdown(u.bannedUntil - Date.now())})</span>`
+        : `<span class="status-ok">Hoạt động</span>`;
+      const action = banned
+        ? `<button class="btn tiny ghost" data-unban="${esc(u.uid)}">Gỡ ban</button>`
+        : `<button class="btn tiny danger" data-ban="${esc(u.uid)}">Ban 24h</button>`;
+      return `<tr>
+        <td class="uid-cell">${esc(u.uid)}</td>
+        <td>${esc(u.email)}</td>
+        <td>${u.points}</td>
+        <td>${fmtMoney(u.balance)}</td>
+        <td>${status}</td>
+        <td>${action}</td>
+      </tr>`;
+    }).join('');
+  }
+
+  // Cấu hình
+  $('cfgLink4m').value = config.link4m || '';
+  $('cfgLayma').value  = config.layma  || '';
+  $('cfgWait').value   = config.wait   || 15;
+}
+
+/* Ban bằng ô nhập UID */
+$('banBtn').addEventListener('click', () => {
+  const uid = $('banUidInput').value.trim();
+  const msg = $('banMsg');
+  const setMsg = (t, cls) => { msg.textContent = t; msg.className = 'msg ' + cls; };
+
+  if(!uid) return setMsg('Vui lòng nhập UID!', 'err');
+
+  users = load(LS.users, []);
+  const u = getUser(uid);
+  if(!u) return setMsg('Không tìm thấy người dùng với UID này!', 'err');
+
+  u.bannedUntil = Date.now() + 24 * 60 * 60 * 1000; // 24 giờ
+  save(LS.users, users);
+
+  $('banUidInput').value = '';
+  setMsg(`Đã ban ${u.email} trong 24 giờ.`, 'ok');
+  toast('🚫 Đã ban người dùng 24 giờ');
+  renderAdmin();
+});
+
+/* Nút ban / gỡ ban trong bảng */
+$('adminUserList').addEventListener('click', e => {
+  const banBtn   = e.target.closest('[data-ban]');
+  const unbanBtn = e.target.closest('[data-unban]');
+
+  if(banBtn){
+    users = load(LS.users, []);
+    const u = getUser(banBtn.dataset.ban);
+    if(!u) return;
+    u.bannedUntil = Date.now() + 24 * 60 * 60 * 1000;
+    save(LS.users, users);
+    toast('🚫 Đã ban ' + u.email + ' 24 giờ');
+    renderAdmin();
+  }
+
+  if(unbanBtn){
+    users = load(LS.users, []);
+    const u = getUser(unbanBtn.dataset.unban);
+    if(!u) return;
+    u.bannedUntil = 0;
+    save(LS.users, users);
+    toast('✅ Đã gỡ ban ' + u.email);
+    renderAdmin();
+  }
+});
+
+/* Lưu cấu hình */
+$('saveCfgBtn').addEventListener('click', () => {
+  config.link4m = $('cfgLink4m').value.trim();
+  config.layma  = $('cfgLayma').value.trim();
+  config.wait   = Math.max(3, parseInt($('cfgWait').value, 10) || 15);
+  save(LS.config, config);
+  const m = $('cfgMsg');
+  m.textContent = 'Đã lưu cấu hình!';
+  m.className = 'msg ok';
+  toast('⚙️ Đã lưu cấu hình');
+});
+
+/* =========================================================
+   VÒNG LẶP KIỂM TRA BAN
+   ========================================================= */
+setInterval(() => {
+  if(currentMode !== 'user') return;
+
+  // Đồng bộ dữ liệu từ localStorage (admin có thể ban từ tab khác)
+  users = load(LS.users, []);
+  const u = getUser(currentUid);
+  if(!u) { logout(); return; }
+
+  const b = isBanned(u);
+  if(b !== banState){
+    banState = b;
+    refresh();
+  }
+  if(b){
+    $('banCountdown').textContent = fmtCountdown(u.bannedUntil - Date.now());
+  }
+}, 1000);
+
+/* Đồng bộ giữa các tab */
+window.addEventListener('storage', e => {
+  if(e.key === LS.users){
+    users = load(LS.users, []);
+    if(currentMode === 'user') refresh();
+    if(currentMode === 'admin') renderAdmin();
+  }
+});
+
+/* Đóng modal khi bấm ra ngoài */
+$('taskModal').addEventListener('click', e => {
+  if(e.target === $('taskModal')) closeModal();
+});
+
+/* =========================================================
+   KHỞI ĐỘNG
+   ========================================================= */
+(function init(){
+  if(session && session.type === 'admin'){
+    currentMode = 'admin';
+    refresh();
+  } else if(session && session.type === 'user'){
+    const u = getUser(session.uid);
+    if(u){
+      currentMode = 'user';
+      currentUid  = u.uid;
+      banState    = isBanned(u);
+      refresh();
+    } else {
+      logout();
+    }
+  } else {
+    showView('authView');
+  }
+})();
+</script>
+</body>
+        </html>
